@@ -105,6 +105,7 @@ func main() {
 				v.Expires = time.Now().Add(24 * 3600 * time.Second)
 				v.HttpOnly = true
 				v.MaxAge = 24 * 3600
+				v.Path = "/"
 				http.SetCookie(w, &v)
 				cookie = &v
 			}
