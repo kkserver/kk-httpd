@@ -3,73 +3,65 @@
 TAG=`date +%Y%m%d%H%M%S`
 PWD=`pwd`
 
+
+exitCommand() {
+	rm -rf src
+	rm -f main
+	exit
+}
+
+runCommand() {
+	echo $CMD
+	$CMD
+	if [ $? -ne 0 ]; then
+		echo -e "[FAIL] $CMD"
+		exitCommand
+	fi 
+}
+
+buildProject() {
+
+	GOPATH=$PWD
+
+	CMD="go get -d"
+
+	runCommand
+
+	#build
+
+	CMD="docker pull registry.cn-hangzhou.aliyuncs.com/kk/kk-golang:latest"
+
+	runCommand
+
+	CMD="docker run --rm -v $PWD:/main:rw -v $PWD:/go:rw registry.cn-hangzhou.aliyuncs.com/kk/kk-golang:latest go build"
+
+	runCommand
+
+	#docker
+	CMD="docker build -t $PROJECT:$TAG ."
+	runCommand
+
+	CMD="docker push $PROJECT:$TAG"
+	runCommand
+
+	CMD="docker tag $PROJECT:$TAG $PROJECT:latest"
+	runCommand
+
+	CMD="docker push $PROJECT:latest"
+	runCommand
+
+}
+
 echo $PWD
 
 #go
 
-GOPATH=$PWD
+PROJECT="registry.cn-hangzhou.aliyuncs.com/kk/kk-httpd"
+buildProject
 
-CMD="go get -d"
+#exit
 
-echo $CMD
+echo "[OK] TAG: $TAG"
 
-$CMD
-
-if [ $? -ne 0 ]; then
-	echo -e "[FAIL] $CMD"
-	exit
-fi 
-
-#build
-
-CMD="docker pull registry.cn-hangzhou.aliyuncs.com/kk/kk-golang:latest"
-
-echo $CMD
-
-$CMD
-
-if [ $? -ne 0 ]; then
-	echo -e "[FAIL] $CMD"
-	exit
-fi
-
-CMD="docker run --rm -v $PWD:/main:rw -v $PWD:/go:rw registry.cn-hangzhou.aliyuncs.com/kk/kk-golang:latest go build"
-
-echo $CMD
-
-$CMD
-
-if [ $? -ne 0 ]; then
-	echo -e "[FAIL] $CMD"
-	exit
-fi
-
-#docker
-CMD="docker build -t registry.cn-hangzhou.aliyuncs.com/kk/kk-httpd:$TAG ."
-
-echo $CMD
-
-$CMD
-
-if [ $? -ne 0 ]; then
-	echo -e "[FAIL] $CMD"
-	exit
-fi
-
-CMD="docker push registry.cn-hangzhou.aliyuncs.com/kk/kk-httpd:$TAG"
-
-echo $CMD
-
-$CMD
-
-if [ $? -ne 0 ]; then
-	echo -e "[FAIL] $CMD"
-	exit
-fi
-
-
-#cleanup
-
-rm -rf src
-rm -f main
+exitCommand
 

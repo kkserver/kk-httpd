@@ -1,5 +1,7 @@
 FROM alpine:latest
 
+RUN echo "Asia/shanghai" >> /etc/timezone
+
 COPY ./main /bin/kk-httpd
 
 RUN chmod +x /bin/kk-httpd
