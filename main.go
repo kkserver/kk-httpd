@@ -58,9 +58,12 @@ func main() {
 
 	})
 
+	var uuid int64 = time.Now().UnixNano()
+
 	var http_handler = func(w http.ResponseWriter, r *http.Request) {
 
-		var id = kk.UUID()
+		var id int64 = uuid + 1
+		uuid = id
 		var ch = make(chan kk.Message)
 		defer close(ch)
 
@@ -99,7 +102,7 @@ func main() {
 			if err != nil {
 				var v = http.Cookie{}
 				v.Name = "kk"
-				v.Value = strconv.FormatInt(kk.UUID(), 10)
+				v.Value = strconv.FormatInt(time.Now().UnixNano(), 10)
 				v.Expires = time.Now().Add(24 * 3600 * time.Second)
 				v.HttpOnly = true
 				v.MaxAge = 24 * 3600
