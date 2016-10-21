@@ -41,8 +41,6 @@ func main() {
 
 	var reply, getname = kk.TCPClientConnect(name, address, map[string]interface{}{"exclusive": true}, func(message *kk.Message) {
 
-		log.Println(message.String())
-
 		var i = strings.LastIndex(message.To, ".")
 		var id, _ = strconv.ParseInt(message.To[i+1:], 10, 64)
 		var ch, ok = https[id]
