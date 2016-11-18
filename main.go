@@ -1,9 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/kkserver/kk-lib/kk"
+	"github.com/kkserver/kk-lib/kk/json"
 	"io"
 	"log"
 	"net/http"
@@ -113,7 +113,7 @@ func main() {
 
 			trackId = cookie.Value
 
-			var b, _ = json.Marshal(map[string]string{"code": trackId, "ip": ip,
+			var b, _ = json.Encode(map[string]string{"code": trackId, "ip": ip,
 				"User-Agent": r.Header.Get("User-Agent"),
 				"Referer":    r.Header.Get("Referer"),
 				"Path":       r.RequestURI,
