@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/kkserver/kk-lib/kk"
+	"github.com/kkserver/kk-lib/kk/inifile"
 	"github.com/kkserver/kk-lib/kk/json"
 	"io"
 	"log"
@@ -13,33 +14,45 @@ import (
 	"time"
 )
 
-func help() {
-	fmt.Println("kk-httpd <name> <127.0.0.1:8700> <:8900> /kk/")
+const VERSION = "1.0.0"
+
+type Httpd struct {
+	Name        string
+	Address     string
+	HttpAddress string
+	Alias       string
+	Options     map[string]interface{}
 }
 
 func main() {
 
 	log.SetFlags(log.Llongfile | log.LstdFlags)
 
-	var args = os.Args
-	var name string = ""
-	var address string = ""
-	var httpaddress string = ""
-	var alias string = ""
+	log.Printf("VERSION: %s\n", VERSION)
 
-	if len(args) > 4 {
-		name = args[1]
-		address = args[2]
-		httpaddress = args[3]
-		alias = args[4]
-	} else {
-		help()
-		return
+	env := "./config/env.ini"
+
+	if len(os.Args) > 1 {
+		env = os.Args[1]
+	}
+
+	var httpd = Httpd{}
+
+	err := inifile.DecodeFile(&httpd, "./app.ini")
+
+	if err != nil {
+		log.Panicln(err)
+	}
+
+	err = inifile.DecodeFile(&httpd, env)
+
+	if err != nil {
+		log.Panicln(err)
 	}
 
 	var https = map[int64]chan kk.Message{}
 
-	var reply, getname = kk.TCPClientConnect(name, address, map[string]interface{}{"exclusive": true}, func(message *kk.Message) {
+	var reply, getname = kk.TCPClientConnect(httpd.Name, httpd.Address, httpd.Options, func(message *kk.Message) {
 
 		var i = strings.LastIndex(message.To, ".")
 		var id, _ = strconv.ParseInt(message.To[i+1:], 10, 64)
@@ -64,12 +77,12 @@ func main() {
 
 		var id int64 = uuid + 1
 		uuid = id
-		var ch = make(chan kk.Message)
+		var ch = make(chan kk.Message, 2048)
 		defer close(ch)
 
 		var body = make([]byte, r.ContentLength)
 		var contentType = r.Header.Get("Content-Type")
-		var to = r.RequestURI[len(alias):]
+		var to = r.RequestURI[len(httpd.Alias):]
 		var n, err = r.Body.Read(body)
 		defer r.Body.Close()
 
@@ -181,11 +194,11 @@ func main() {
 
 	go func() {
 
-		http.HandleFunc(alias, http_handler)
+		http.HandleFunc(httpd.Alias, http_handler)
 
-		log.Println("httpd " + httpaddress)
+		log.Println("httpd " + httpd.HttpAddress)
 
-		log.Fatal(http.ListenAndServe(httpaddress, nil))
+		log.Fatal(http.ListenAndServe(httpd.HttpAddress, nil))
 
 	}()
 
